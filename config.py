@@ -3,13 +3,18 @@ from pydantic import BaseModel
 from typing import List
 
 
-def config(name_coll: str):
+def config():
 
     client = MongoClient('')
     db = client.documentsAnalysis
 
-    return db[name_coll]
+    return db
 
 
-class Structure(BaseModel):
+class StructureDocument(BaseModel):
+    structure: List
+
+
+class StructureCreateDocument(BaseModel):
+    name: str
     structure: List

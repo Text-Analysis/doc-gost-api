@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from config import config, Structure
+from config import config, StructureDocument, StructureCreateDocument
 from bson.objectid import ObjectId
 
 app = FastAPI()
@@ -15,13 +15,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-coll = config('techSpecifications')
+config = config()
+collSpecifications = config['requirementsSpecifications']
+collTemp = config['sectionTreeTemplates']
 
 
 @app.get('/api/specifications')
 def get_specifications():
     data = []
-    for value in coll.find({}, {'document_name': 1}):
+    for value in collSpecifications.find({}, {'document_name': 1}):
         data.append({
             'id': str(value.get('_id')),
             'documentName': value.get('document_name')
@@ -31,7 +33,7 @@ def get_specifications():
 
 @app.get('/api/specifications/{specification_id}')
 def get_specification(specification_id: str):
-    specification = coll.find_one({'_id': ObjectId(specification_id)})
+    specification = collSpecifications.find_one({'_id': ObjectId(specification_id)})
     return {
         'id': str(specification.get('_id')),
         'documentName': specification.get('document_name'),
@@ -40,8 +42,24 @@ def get_specification(specification_id: str):
 
 
 @app.put('/api/specifications/{specification_id}')
-def update_specification(specification_id: str, doc_structure: Structure):
+def update_specification(specification_id: str, doc_structure: StructureDocument):
     current = {'_id': ObjectId(specification_id)}
     new_data = {'$set': {'structure': doc_structure.structure[0]}}
-    coll.update_one(current, new_data)
+    collSpecifications.update_one(current, new_data)
+    return 'Ok'
+
+
+@app.get('/api/templates/{temp_id}')
+def get_template(temp_id: str):
+    template = collTemp.find_one({'_id': ObjectId(temp_id)})
+    return {
+        'id': str(template.get('_id')),
+        'documentName': template.get('document_name'),
+        'structure': [template.get('structure')]
+    }
+
+
+@app.post('/api/specifications')
+def create_document(data: StructureCreateDocument):
+    collSpecifications.insert_one({"document_name": data.name, "structure": data.structure})
     return 'Ok'
