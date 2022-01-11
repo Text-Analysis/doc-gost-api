@@ -1,14 +1,16 @@
-from pymongo import MongoClient
 from pydantic import BaseModel
 from typing import List
 
 
-def config():
+class Specification(BaseModel):
+    id: str
+    documentName: str
 
-    client = MongoClient('')
-    db = client.documentsAnalysis
 
-    return db
+class SpecificationFull(BaseModel):
+    id: str
+    documentName: str
+    structure: List
 
 
 class StructureDocument(BaseModel):
