@@ -1,9 +1,9 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from db import Database
-from models import StructureDocument, StructureCreateDocument
-import os
+from app.db import Database
+from app.models import StructureDocument, StructureCreateDocument
 from dotenv import load_dotenv
+import os
 
 load_dotenv()
 

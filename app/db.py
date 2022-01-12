@@ -1,14 +1,12 @@
 from pymongo import MongoClient
 from typing import List, Dict
-from models import Specification, SpecificationFull, StructureDocument, StructureCreateDocument
+from app.models import Specification, SpecificationFull, StructureDocument, StructureCreateDocument
 from bson.objectid import ObjectId
 
 
 class Database:
     """
-
     Класс, с помощью которого происходит взаимодействие с базой данных MongoDB
-
     """
 
     def __init__(self, uri: str):
