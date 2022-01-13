@@ -1,12 +1,12 @@
 FROM python:3.8
 
-WORKDIR /code
+WORKDIR /src
 
-COPY ./requirements.txt /code/requirements.txt
+COPY ./requirements.txt /src/requirements.txt
 
-RUN pip3 install --no-cache-dir --upgrade -r /code/requirements.txt
+RUN pip3 install --no-cache-dir --upgrade -r /src/requirements.txt
 
-COPY ./app /code/app
+COPY ./app /src/app
 
 ENV URI="${URI}"
 
