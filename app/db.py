@@ -65,15 +65,15 @@ class Database:
 
         return 'OK'
 
-    def get_template(self, temp_id: str) -> SpecificationFull:
+    def get_template(self, template_id: str) -> SpecificationFull:
         """
-        :param temp_id: Id шаблона
+        :param template_id: Id шаблона
         :return: Метод возращает пустой шаблон для создания документа
         """
-        template = self.coll_templates.find_one({'_id': ObjectId(temp_id)})
+        template = self.coll_templates.find_one({'_id': ObjectId(template_id)})
         specification_correct: SpecificationFull = SpecificationFull(
             id=str(template.get('_id')),
-            documentName=template.get('document_name'),
+            documentName=template.get('name'),
             structure=[template.get('structure')])
 
         return specification_correct

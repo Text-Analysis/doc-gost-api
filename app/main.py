@@ -44,7 +44,7 @@ def create_document(data: StructureCreateDocument):
     return db.create_document(data)
 
 
-@app.get('/api/templates/{temp_id}')
-def get_template(temp_id: str):
+@app.get('/api/templates/{template_id}')
+def get_template(template_id: str):
 
-    return db.get_template(temp_id)
+    return db.get_template(template_id)
