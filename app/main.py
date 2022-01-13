@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from app.db import Database
 from app.models import StructureDocument, StructureCreateDocument
@@ -48,3 +48,9 @@ def create_document(data: StructureCreateDocument):
 def get_template(template_id: str):
 
     return db.get_template(template_id)
+
+
+@app.post('/api/file')
+async def parse_upload_file(file: UploadFile = File(...)):
+
+    return await db.parse_doc_by_template(file)

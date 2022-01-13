@@ -2,6 +2,9 @@ from pymongo import MongoClient
 from typing import List, Dict
 from app.models import Specification, SpecificationFull, StructureDocument, StructureCreateDocument
 from bson.objectid import ObjectId
+from fastapi import File, UploadFile
+import os
+from srsparser import Parser
 
 
 class Database:
@@ -77,3 +80,24 @@ class Database:
             structure=[template.get('structure')])
 
         return specification_correct
+
+    @staticmethod
+    def save_file(filename: str, data):
+        with open(os.path.join('app', filename), 'wb') as f:
+            f.write(data)
+
+    async def parse_doc_by_template(self, file: UploadFile = File(...)) -> str:
+
+        template = self.coll_templates.find_one({"name": "default"})["structure"]
+
+        contents = await file.read()
+        self.save_file(file.filename, contents)
+
+        parser = Parser(template)
+        document_structure = parser.parse_docx(f'./app/{file.filename}')
+
+        self.coll_specifications.insert_one({"document_name": file.filename, "structure": document_structure})
+
+        os.remove(f'./app/{file.filename}')
+
+        return 'OK'
