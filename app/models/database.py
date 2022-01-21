@@ -1,6 +1,6 @@
 from pymongo import MongoClient
 from typing import List, Dict
-from app.models import Specification, SpecificationFull, StructureDocument, StructureCreateDocument
+from app.schemas.schema import Specification, SpecificationFull, StructureDocument, StructureCreateDocument
 from bson.objectid import ObjectId
 from fastapi import File, UploadFile
 import os
