@@ -8,7 +8,8 @@ class Specification(BaseModel):
 
 
 class SpecificationFull(BaseModel):
-    Specification()
+    id: str
+    documentName: str
     structure: List
 
 

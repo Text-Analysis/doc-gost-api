@@ -3,7 +3,7 @@ from typing import List, Dict
 from app.schemas.schema import Specification, SpecificationFull, StructureDocument, StructureCreateDocument
 from bson.objectid import ObjectId
 from fastapi import File, UploadFile
-from analyze import Analyze
+from app.models.analyze import Analyze
 
 
 class Database:
@@ -28,6 +28,23 @@ class Database:
             List.append(data, specification)
 
         return {'data': data}
+
+    def get_specifications_full(self) -> Dict[str, List[SpecificationFull]]:
+        """
+        :return: The method returns all documents
+        """
+        data: List[SpecificationFull] = []
+        for value in self.coll_specifications.find({}):
+            specification: SpecificationFull = SpecificationFull(
+                id=str(value.get('_id')),
+                documentName=value.get('document_name'),
+                structure=[value.get('structure')]
+            )
+            List.append(data, specification)
+        return {'data': data}
+
+    def get_specifications_mongo(self) -> List[Dict]:
+        return list(self.coll_specifications.find({}))
 
     def get_specification(self, specification_id: str) -> SpecificationFull:
         """
