@@ -94,15 +94,16 @@ class Database:
 
         return specification_correct
 
-    async def parse_doc_by_template(self, file: UploadFile = File(...)) -> str:
+    async def parse_doc_by_template(self, filename: str, file: UploadFile = File(...)) -> str:
         """
         :param file: Document
+        :param filename: name of file
         :return: Method save a structure of document in DataBase
         """
         template = self.coll_templates.find_one({"name": "default"})["structure"]
 
         document_structure = await Analyze().parse_doc_by_template(file=file, template=template)
 
-        self.coll_specifications.insert_one({"document_name": file.filename, "structure": document_structure})
+        self.coll_specifications.insert_one({"document_name": filename, "structure": document_structure})
 
         return 'OK'

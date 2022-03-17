@@ -1,4 +1,4 @@
-from fastapi import APIRouter, File, UploadFile
+from fastapi import APIRouter, File, UploadFile, Form
 from app.models.database import Database
 from app.schemas.schema import StructureDocument, StructureCreateDocument
 from dotenv import load_dotenv
@@ -53,5 +53,5 @@ def get_template(template_id: str):
 
 
 @router.post('/api/file')
-async def parse_upload_file(file: UploadFile = File(...)):
-    return await db.parse_doc_by_template(file)
+async def parse_upload_file(filename: str = Form(...), file: UploadFile = File(...)):
+    return await db.parse_doc_by_template(filename, file)
