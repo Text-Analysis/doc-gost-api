@@ -104,6 +104,8 @@ class Database:
 
         document_structure = await Analyze().parse_doc_by_template(file=file, template=template)
 
-        self.coll_specifications.insert_one({"document_name": filename, "structure": document_structure})
+        id_specification = self.coll_specifications.insert_one(
+            {"document_name": filename, "structure": document_structure}
+        )
 
-        return 'OK'
+        return str(id_specification.inserted_id)
