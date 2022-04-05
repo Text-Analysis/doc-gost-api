@@ -31,10 +31,20 @@ class Analyze:
 
         return document_structure
 
-    def get_keywords_by_specification_id(self, specifications: List[Dict], doc_name: str) -> List:
+    def get_keywords_by_specification_id(self, specifications: List[Dict], doc_name: str, mode: str) -> List:
         """
         :param specifications: list of specifications
         :param doc_name: name of document
+        :param mode: mode takes next variants: tf_idf, pullenti, combine
         :return: Method returns list of specification keywords
         """
-        return self.nlp.get_structure_keywords_with_ratios(specifications, doc_name)
+        if mode == 'combine':
+            return self.nlp.get_structure_keywords_with_ratios(specifications, doc_name)
+
+        if mode == 'pullenti':
+            return self.nlp.get_structure_keywords_pullenti(specifications, doc_name)
+
+        if mode == 'tf_idf':
+            return self.nlp.get_structure_keywords_tf_idf(specifications, doc_name)
+
+        return []

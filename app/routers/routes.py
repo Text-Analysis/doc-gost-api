@@ -39,12 +39,16 @@ def create_document(data: StructureCreateDocument):
 
 
 @router.get('/api/specifications/{specification_id}/keywords')
-def get_keywords_by_specification_id(specification_id: str):
+def get_keywords_by_specification_id(specification_id: str, mode: str):
+    """
+    :param specification_id: parsed document id from MongoDB collection
+    :param mode: mode takes next variants: tf_idf, pullenti, combine
+    """
     specifications_mongo = db.get_specifications_mongo()
     specification_current = db.get_specification(specification_id)
     doc_name = specification_current.documentName
 
-    return analyze.get_keywords_by_specification_id(specifications_mongo, doc_name)
+    return analyze.get_keywords_by_specification_id(specifications_mongo, doc_name, mode)
 
 
 @router.get('/api/templates/{template_id}')
