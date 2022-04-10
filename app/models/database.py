@@ -75,9 +75,9 @@ class Database:
     def create_document(self, data: StructureCreateDocument) -> str:
         """
         :param data: The structure for creating a document (including name and structure)
-        :return: Если документ успешно добавлен, метод возвращает 'OK'
+        :return: If document was updated successfully, the method returns 'OK'
         """
-        self.coll_specifications.insert_one({"document_name": data.name, "structure": data.structure})
+        self.coll_specifications.insert_one({"document_name": data.name, "structure": data.structure[0]})
 
         return 'OK'
 
@@ -94,18 +94,13 @@ class Database:
 
         return specification_correct
 
-    async def parse_doc_by_template(self, filename: str, file: UploadFile = File(...)) -> str:
+    async def parse_doc_by_template(self, file: UploadFile = File(...)) -> List:
         """
         :param file: Document
-        :param filename: name of file
         :return: Method save a structure of document in DataBase
         """
         template = self.coll_templates.find_one({"name": "default"})["structure"]
 
         document_structure = await Analyze().parse_doc_by_template(file=file, template=template)
 
-        id_specification = self.coll_specifications.insert_one(
-            {"document_name": filename, "structure": document_structure}
-        )
-
-        return str(id_specification.inserted_id)
+        return [document_structure]

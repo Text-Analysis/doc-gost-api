@@ -1,7 +1,7 @@
 import os
 from fastapi import File, UploadFile
-from srsparser import SRSParser, NLProcessor
-from typing import Any, List, Dict
+from srsparser import SRSParser, NLProcessor, SectionsTree
+from typing import List, Dict, Optional
 
 
 class Analyze:
@@ -14,7 +14,7 @@ class Analyze:
         with open(os.path.join('app', filename), 'wb') as f:
             f.write(data)
 
-    async def parse_doc_by_template(self, template: Any, file: UploadFile = File(...)) -> dict:
+    async def parse_doc_by_template(self, template: Dict, file: UploadFile = File(...)) -> dict:
         """
         :param file: Document
         :param template: Template
@@ -31,20 +31,34 @@ class Analyze:
 
         return document_structure
 
-    def get_keywords_by_specification_id(self, specifications: List[Dict], doc_name: str, mode: str) -> List:
+    @staticmethod
+    def get_sections(structure: Dict) -> List[str]:
+        structure = SectionsTree(structure)
+
+        return structure.get_sections_names()
+
+    def get_keywords_by_specification_id(self, specifications: List[Dict], doc_name: str,
+                                         mode: str, section: Optional[str] = None) -> List:
         """
         :param specifications: list of specifications
         :param doc_name: name of document
         :param mode: mode takes next variants: tf_idf, pullenti, combine
+        :param section: section of document
         :return: Method returns list of specification keywords
         """
         if mode == 'combine':
-            return self.nlp.get_structure_keywords_with_ratios(specifications, doc_name)
+            if section is None:
+                return self.nlp.get_structure_keywords_with_ratios(specifications, doc_name)
+            return self.nlp.get_structure_keywords_with_ratios(specifications, doc_name, section)
 
         if mode == 'pullenti':
-            return self.nlp.get_structure_keywords_pullenti(specifications, doc_name)
+            if section is None:
+                return self.nlp.get_structure_keywords_pullenti(specifications, doc_name)
+            return self.nlp.get_structure_keywords_pullenti(specifications, doc_name, section)
 
         if mode == 'tf_idf':
-            return self.nlp.get_structure_keywords_tf_idf(specifications, doc_name)
+            if section is None:
+                return self.nlp.get_structure_keywords_tf_idf(specifications, doc_name)
+            return self.nlp.get_structure_keywords_tf_idf(specifications, doc_name, section)
 
         return []
