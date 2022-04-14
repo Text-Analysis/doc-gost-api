@@ -4,3 +4,4 @@ uvicorn==0.16.0
 pymongo==4.0.1
 python-dotenv==0.19.2
 srsparser>=1.0.1
+python-multipart>=0.0.5
