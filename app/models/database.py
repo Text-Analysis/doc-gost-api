@@ -10,7 +10,7 @@ class Database:
 
     def __init__(self, uri: str):
 
-        client = MongoClient(uri, tls=True, tlsAllowInvalidCertificates=True)
+        client = MongoClient(uri)
         config = client.documentsAnalysis
         self.coll_specifications = config['requirementsSpecifications']
         self.coll_templates = config['sectionTreeTemplates']
