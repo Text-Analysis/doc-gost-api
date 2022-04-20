@@ -1,12 +1,14 @@
-FROM python:3.8
+# syntax=docker/dockerfile:1
 
-WORKDIR /src
+FROM python:3.8-slim-buster
 
-COPY ./requirements.txt /src/requirements.txt
+WORKDIR /app
 
-RUN pip3 install --no-cache-dir --upgrade -r /src/requirements.txt
+COPY requirements.txt requirements.txt
 
-COPY ./app /src/app
+RUN pip3 install -r requirements.txt
+
+COPY ./app .
 
 ENV URI="${URI}"
 
