@@ -10,7 +10,7 @@ RUN pip3 install -r requirements.txt
 
 COPY ./app ./app
 
-ENV URI="${URI}"
+ENV MONGODB_CONNSTRING="${MONGODB_CONNSTRING}"
 
 EXPOSE 8000
 

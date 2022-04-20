@@ -7,7 +7,7 @@ from app.models.analyze import Analyze
 import os
 
 load_dotenv()
-URI = os.getenv('URI')
+URI = os.environ['MONGODB_CONNSTRING']
 
 router = APIRouter()
 db = Database(URI)
