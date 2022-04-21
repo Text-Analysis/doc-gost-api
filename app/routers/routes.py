@@ -1,17 +1,10 @@
 from fastapi import APIRouter, File, UploadFile
 from typing import Optional, Dict
-from app.models.database import Database
 from app.schemas.schema import StructureDocument, StructureCreateDocument
-from dotenv import load_dotenv
-from app.models.analyze import Analyze
-import os
+from app import db, analyze
 
-load_dotenv()
-URI = os.environ['MONGODB_CONNSTRING']
 
 router = APIRouter()
-db = Database(URI)
-analyze = Analyze()
 
 
 @router.get('/api/specifications')
