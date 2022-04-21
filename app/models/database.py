@@ -9,9 +9,8 @@ from app.models.analyze import Analyze
 class Database:
 
     def __init__(self, uri: str):
-
         client = MongoClient(uri)
-        config = client.documentsAnalysis
+        config = client["documentsAnalysis"]
         self.coll_specifications = config['requirementsSpecifications']
         self.coll_templates = config['sectionTreeTemplates']
 
