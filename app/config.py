@@ -1,4 +1,4 @@
-from .models import Database, Analyze
+from .models import Database, ParserWrapper
 from dotenv import load_dotenv
 import os
 
@@ -8,4 +8,4 @@ mongodb_connstring = os.environ['MONGODB_CONNSTRING']
 
 db = Database(mongodb_connstring)
 
-analyze = Analyze()
+parser = ParserWrapper()

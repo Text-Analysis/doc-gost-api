@@ -2,12 +2,12 @@ from pydantic import BaseModel
 from typing import List
 
 
-class Document(BaseModel):
+class DocumentShort(BaseModel):
     id: str
     name: str
 
 
-class DocumentFull(BaseModel):
+class Document(BaseModel):
     id: str
     name: str
     structure: List

@@ -1,65 +1,108 @@
-from fastapi import APIRouter, File, UploadFile
+from fastapi import APIRouter, File, UploadFile, HTTPException
 from typing import Optional, Dict
-from app.schemas.schema import StructureDocument, StructureCreateDocument
-from app import db, analyze
+from app.schemas.schema import StructureDocument, StructureCreateDocument, Document
+from app import db, parser
+from enum import Enum
+
+
+class KeywordExtractionMode(str, Enum):
+    pullenti = 'pullenti'
+    tf_idf = 'tf_idf'
+    combine = 'combine'
 
 
 router = APIRouter()
 
 
-@router.post('/api/specification/', tags=["specifications"])
+@router.post('/api/documents', tags=['documents'])
 def create_document(data: StructureCreateDocument):
-    return db.create_document(data)
+    created = db.create_document(data)
+    if not created:
+        raise HTTPException(status_code=422, detail='input data is not valid')
+    return 'OK'
 
 
-@router.get('/api/specification/', tags=["specifications"])
-def get_specifications(full: bool = False):
-    if not full:
-        return db.get_specifications()
-    return db.get_specifications_full()
+@router.get('/api/documents', tags=['documents'])
+def get_documents(short: bool = True):
+    if short:
+        return db.get_documents_short()
+    return db.get_documents()
 
 
-@router.get('/api/specification/{specification_id}', tags=["specifications"])
-def get_specification(specification_id: str):
-    return db.get_specification(specification_id)
+@router.get('/api/documents/{document_id}', tags=['documents'])
+def get_document(document_id: str):
+    document = db.get_document(document_id)
+    if not document:
+        raise HTTPException(status_code=404, detail=f'document with _id={document_id} not found')
+    return document
 
 
-@router.put('/api/specification/{specification_id}', tags=["specifications"])
-def update_specification(specification_id: str, doc_structure: StructureDocument):
-    return db.update_specification(specification_id, doc_structure)
+@router.put('/api/documents/{document_id}', tags=['documents'])
+def update_document(document_id: str, document_structure: StructureDocument):
+    document = db.get_document(document_id)
+    if not document:
+        raise HTTPException(status_code=404, detail=f'document with _id={document_id} not found')
+    return db.update_document(document_id, document_structure)
 
 
-@router.get('/api/specification/{specification_id}/keywords', tags=["specifications"])
-def get_keywords_by_specification_id(specification_id: str, mode: str, section: Optional[str] = None):
-    specifications_mongo = db.get_specifications_mongo()
-    specification_current = db.get_specification(specification_id)
-    doc_name = specification_current.documentName
+@router.get('/api/documents/{document_id}/keywords', tags=['documents'])
+def get_document_keywords(document_id: str, mode: KeywordExtractionMode, section_name: Optional[str] = None):
+    documents = db.get_mongo_documents()
 
-    return analyze.get_keywords_by_specification_id(specifications_mongo, doc_name, mode, section)
+    document = Document(id='', name='', structure=[])
+    for d in documents:
+        if str(d.get('_id')) == document_id:
+            document.id = str(d.get('_id'))
+            document.name = d.get('name')
+            document.structure = [d.get('section_tree')]
+            break
+
+    if not document.id:
+        raise HTTPException(status_code=404, detail=f'document with _id={document_id} not found')
+
+    if mode == KeywordExtractionMode.tf_idf:
+        return parser.extract_tf_idf_pairs(documents, document.name, section_name)
+
+    if mode == KeywordExtractionMode.pullenti:
+        return parser.extract_keywords(documents, document.name, section_name)
+
+    if mode == KeywordExtractionMode.combine:
+        return parser.extract_rationized_keywords(documents, document.name, section_name)
+
+    raise HTTPException(status_code=404, detail=f'keyword extraction mode {mode} not found')
 
 
-@router.post('/api/template/', tags=["templates"])
-def create_document(data: StructureCreateDocument):
-    return db.create_template(data)
+@router.post('/api/templates', tags=['templates'])
+def create_template(data: StructureCreateDocument):
+    created = db.create_template(data)
+    if not created:
+        raise HTTPException(status_code=422, detail='input data is not valid')
+    return 'OK'
 
 
-@router.get('/api/template/', tags=["templates"])
+@router.get('/api/templates', tags=['templates'])
 def get_templates():
     return db.get_templates()
 
 
-@router.get('/api/template/{template_id}', tags=["templates"])
+@router.get('/api/templates/{template_id}', tags=['templates'])
 def get_template(template_id: str):
-    return db.get_template(template_id)
+    template = db.get_template(template_id)
+    if not template:
+        raise HTTPException(status_code=404, detail=f'template with _id={template_id} not found')
+    return template
 
 
-@router.post('/api/file/')
+@router.post('/api/files')
 async def parse_file(file: UploadFile = File(...)):
-    return await db.parse_doc_by_template(file)
+    return await db.parse_docx_by_template(file)
 
 
-@router.get('/api/section/{document_id}')
+@router.get('/api/sections/{document_id}')
 def get_sections(document_id: str):
-    document_structure: Dict = db.get_specification(document_id).structure[0]
+    document = db.get_document(document_id)
+    if not document:
+        raise HTTPException(status_code=404, detail=f'document with _id={document_id} not found')
 
-    return analyze.get_sections(document_structure)
+    document_structure: Dict = document.structure[0]
+    return parser.get_section_names(document_structure)
