@@ -41,6 +41,11 @@ def get_keywords_by_specification_id(specification_id: str, mode: str, section: 
     return analyze.get_keywords_by_specification_id(specifications_mongo, doc_name, mode, section)
 
 
+@router.get('/api/templates')
+def get_templates():
+    return db.get_templates()
+
+
 @router.get('/api/templates/{template_id}')
 def get_template(template_id: str):
     return db.get_template(template_id)
