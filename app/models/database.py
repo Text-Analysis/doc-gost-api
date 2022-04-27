@@ -2,7 +2,7 @@ from pymongo import MongoClient
 from typing import List, Dict
 from app.schemas.schema import Document, DocumentFull, StructureDocument, StructureCreateDocument
 from bson.objectid import ObjectId
-from fastapi import File, UploadFile
+from fastapi import File, UploadFile, HTTPException
 from app.models.analyze import Analyze
 
 
@@ -13,6 +13,7 @@ class Database:
         config = client["documentsAnalysis"]
         self.coll_specifications = config['requirementsSpecifications']
         self.coll_templates = config['sectionTreeTemplates']
+        self.analyze = Analyze()
 
     def get_specifications(self) -> Dict[str, List[Document]]:
         """
@@ -47,7 +48,6 @@ class Database:
             id=str(specification.get('_id')),
             name=specification.get('name'),
             structure=[specification.get('structure')])
-
         return specification_correct
 
     def update_specification(self, specification_id: str, doc_structure: StructureDocument) -> str:
@@ -60,7 +60,6 @@ class Database:
         update_data = {'$set': {'structure': doc_structure.structure[0]}}
 
         self.coll_specifications.update_one(current_specification, update_data)
-
         return 'OK'
 
     def create_document(self, data: StructureCreateDocument) -> str:
@@ -69,7 +68,6 @@ class Database:
         :return: If document was updated successfully, the method returns 'OK'
         """
         self.coll_specifications.insert_one({"name": data.name, "structure": data.structure[0]})
-
         return 'OK'
 
     def get_templates(self) -> Dict[str, List[Document]]:
@@ -88,11 +86,14 @@ class Database:
             id=str(template.get('_id')),
             name=template.get('name'),
             structure=[template.get('structure')])
-
         return specification_correct
 
     def create_template(self, data: StructureCreateDocument):
-        return self.coll_templates.insert_one()
+        state = self.analyze.check_template(data.structure[0])
+        if not state:
+            raise HTTPException(status_code=422, detail="Validation error. Wrong structure.")
+        self.coll_templates.insert_one({"name": data.name, "structure": data.structure[0]})
+        return 'OK'
 
     async def parse_doc_by_template(self, file: UploadFile = File(...)) -> List:
         """
@@ -100,9 +101,7 @@ class Database:
         :return: Method save a structure of document in DataBase
         """
         template = self.coll_templates.find_one({"name": "default"})["structure"]
-
-        document_structure = await Analyze().parse_doc_by_template(file=file, template=template)
-
+        document_structure = await self.analyze.parse_doc_by_template(file=file, template=template)
         return [document_structure]
 
     @staticmethod
@@ -114,5 +113,4 @@ class Database:
                 name=value.get('name')
             )
             List.append(entities, entity)
-
         return {'data': entities}

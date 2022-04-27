@@ -2,7 +2,18 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .routers import routes
 
-app = FastAPI()
+tags_metadata = [
+    {
+        "name": "specifications",
+        "description": "Operations with specifications",
+    },
+    {
+        "name": "templates",
+        "description": "Operations with templates",
+    },
+]
+
+app = FastAPI(openapi_tags=tags_metadata)
 
 app.add_middleware(
     CORSMiddleware,
