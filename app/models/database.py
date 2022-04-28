@@ -1,116 +1,152 @@
+import bson.errors
 from pymongo import MongoClient
-from typing import List, Dict
-from app.schemas.schema import Document, DocumentFull, StructureDocument, StructureCreateDocument
+from typing import List, Dict, Union
+from app.schemas.schema import DocumentShort, Document, StructureDocument, StructureCreateDocument
 from bson.objectid import ObjectId
-from fastapi import File, UploadFile, HTTPException
-from app.models.analyze import Analyze
+from fastapi import File, UploadFile
+from app.models.parserwrapper import ParserWrapper
 
 
 class Database:
+    """
+    A class for working with MongoDB database collections.
+    """
 
     def __init__(self, uri: str):
         client = MongoClient(uri, tls=True, tlsAllowInvalidCertificates=True)
-        config = client["documentsAnalysis"]
-        self.coll_specifications = config['requirementsSpecifications']
-        self.coll_templates = config['sectionTreeTemplates']
-        self.analyze = Analyze()
+        database = client['documentsAnalysis']
+        self.documents = database['requirementsSpecifications']
+        self.templates = database['sectionTreeTemplates']
+        self.parser = ParserWrapper()
 
-    def get_specifications(self) -> Dict[str, List[Document]]:
+    def get_documents_short(self) -> Dict[str, List[DocumentShort]]:
         """
-        :return: The method returns all documents
-        """
-        return self.__get_entities(self.coll_specifications)
+        Returns short information about all documents in the database (ids and names).
 
-    def get_specifications_full(self) -> Dict[str, List[DocumentFull]]:
+        :return: dictionary containing :py:class:`DocumentShort` elements.
         """
-        :return: The method returns all documents
+        return self.__get_entities(self.documents)
+
+    def get_documents(self) -> Dict[str, List[Document]]:
         """
-        data: List[DocumentFull] = []
-        for value in self.coll_specifications.find({}):
-            specification: DocumentFull = DocumentFull(
-                id=str(value.get('_id')),
-                name=value.get('name'),
-                structure=[value.get('structure')]
+        Returns information about all documents in the database (ids, names and structures).
+
+        :return: a list of :py:class:`Document` elements.
+        """
+        result: List[Document] = []
+        for document in self.documents.find({}):
+            result.append(Document(
+                id=str(document.get('_id')),
+                name=document.get('name'),
+                structure=[document.get('structure')]
+            ))
+        return {'data': result}
+
+    def get_document(self, document_id: str) -> Union[Document, None]:
+        """
+        Returns information about the document from the resulting collection.
+        """
+        try:
+            object_id = ObjectId(document_id)
+        except bson.errors.InvalidId:
+            return None
+
+        document = self.documents.find_one({'_id': object_id})
+        if document:
+            return Document(
+                id=str(document.get('_id')),
+                name=document.get('name'),
+                structure=[document.get('structure')]
             )
-            List.append(data, specification)
-        return {'data': data}
+        return None
 
-    def get_specifications_mongo(self) -> List[Dict]:
-        return list(self.coll_specifications.find({}))
+    def get_mongo_documents(self) -> List[dict]:
+        """
+        Returns a list of objects stored in the resulting collection.
+        """
+        return list(self.documents.find({}))
 
-    def get_specification(self, specification_id: str) -> DocumentFull:
+    def update_document(self, document_id: str, new_document_structure: StructureDocument) -> str:
         """
-        :param specification_id: Id document
-        :return: The method returns a full document
-        """
-        specification = self.coll_specifications.find_one({'_id': ObjectId(specification_id)})
-        specification_correct: DocumentFull = DocumentFull(
-            id=str(specification.get('_id')),
-            name=specification.get('name'),
-            structure=[specification.get('structure')])
-        return specification_correct
+        Updates information about a document that exists in the resulting collection.
 
-    def update_specification(self, specification_id: str, doc_structure: StructureDocument) -> str:
+        :param document_id: string representation of the document object id.
+        :param new_document_structure: edited section structure.
+        :return: status.
         """
-        :param specification_id: Id document
-        :param doc_structure: The new structure of document
-        :return: If document was updated successfully, the method returns 'OK'
-        """
-        current_specification = {'_id': ObjectId(specification_id)}
-        update_data = {'$set': {'structure': doc_structure.structure[0]}}
-
-        self.coll_specifications.update_one(current_specification, update_data)
+        # we do not check the id for valid, since we first call the receiving method, which has a check
+        document = {'_id': ObjectId(document_id)}
+        new_data = {'$set': {'structure': new_document_structure.structure[0]}}
+        self.documents.update_one(document, new_data)
         return 'OK'
 
-    def create_document(self, data: StructureCreateDocument) -> str:
+    def create_document(self, data: StructureCreateDocument) -> bool:
         """
-        :param data: The structure for creating a document (including name and structure)
-        :return: If document was updated successfully, the method returns 'OK'
-        """
-        self.coll_specifications.insert_one({"name": data.name, "structure": data.structure[0]})
-        return 'OK'
+        Adds information about the new document to the resulting collection.
 
-    def get_templates(self) -> Dict[str, List[Document]]:
+        :param data: class containing information about the document (name and structure).
+        :return: returns True if the document was created successfully. Otherwise returns False..
         """
-        :return: The method returns all templates
-        """
-        return self.__get_entities(self.coll_templates)
+        is_structure_valid = self.parser.is_valid(data.structure[0])
+        if not is_structure_valid:
+            return False
 
-    def get_template(self, template_id: str) -> DocumentFull:
-        """
-        :param template_id: ID template
-        :return: The method returns an empty template
-        """
-        template = self.coll_templates.find_one({'_id': ObjectId(template_id)})
-        specification_correct: DocumentFull = DocumentFull(
-            id=str(template.get('_id')),
-            name=template.get('name'),
-            structure=[template.get('structure')])
-        return specification_correct
+        self.documents.insert_one({'name': data.name, 'structure': data.structure[0]})
+        return True
 
-    def create_template(self, data: StructureCreateDocument):
-        state = self.analyze.check_template(data.structure[0])
-        if not state:
-            raise HTTPException(status_code=422, detail="Validation error. Wrong structure.")
-        self.coll_templates.insert_one({"name": data.name, "structure": data.structure[0]})
-        return 'OK'
+    def get_templates(self) -> Dict[str, List[DocumentShort]]:
+        """
+        Returns all structures templates for recognizing text documents.
+        """
+        return self.__get_entities(self.templates)
 
-    async def parse_doc_by_template(self, file: UploadFile = File(...)) -> List:
+    def get_template(self, template_id: str) -> Union[Document, None]:
         """
-        :param file: Document
-        :return: Method save a structure of document in DataBase
+        Returns information about the structure template from the collection with templates.
         """
-        template = self.coll_templates.find_one({"name": "default"})["structure"]
-        document_structure = await self.analyze.parse_doc_by_template(file=file, template=template)
+        try:
+            object_id = ObjectId(template_id)
+        except bson.errors.InvalidId:
+            return None
+
+        template = self.templates.find_one({'_id': object_id})
+        if template:
+            return Document(
+                id=str(template.get('_id')),
+                name=template.get('name'),
+                structure=[template.get('structure')]
+            )
+        return None
+
+    def create_template(self, data: StructureCreateDocument) -> bool:
+        """
+        Adds information about the new structure template to the collection with templates.
+
+        :param data: class containing information about the structure template (name and structure).
+        :return: returns True if the structure template was created successfully. Otherwise returns False.
+        """
+        is_structure_valid = self.parser.is_valid(data.structure[0])
+        if not is_structure_valid:
+            return False
+
+        self.templates.insert_one({'name': data.name, 'structure': data.structure[0]})
+        return True
+
+    async def parse_docx_by_template(self, file: UploadFile = File(...)) -> list:
+        """
+        The wrapper method over method `parse_docx_by_template` from :py:class:`ParserWrapper`.
+        """
+        template = self.templates.find_one({'name': 'default'})['structure']
+        document_structure = await self.parser.parse_docx_by_template(template, file)
         return [document_structure]
 
     @staticmethod
-    def __get_entities(entity) -> Dict[str, List[Document]]:
-        entities: List[Document] = []
+    def __get_entities(entity) -> Dict[str, List[DocumentShort]]:
+        entities: List[DocumentShort] = []
+        # TODO: что означает {'name': 1}
         for value in entity.find({}, {'name': 1}):
-            entity: Document = Document(
+            entities.append(DocumentShort(
                 id=str(value.get('_id')),
                 name=value.get('name')
-            )
-            List.append(entities, entity)
+            ))
         return {'data': entities}

@@ -1,11 +1,11 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from .routers import routes
+from app.routers import routes
 
 tags_metadata = [
     {
-        "name": "specifications",
-        "description": "Operations with specifications",
+        "name": "documents",
+        "description": "Operations with documents",
     },
     {
         "name": "templates",

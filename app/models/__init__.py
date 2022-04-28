@@ -1,2 +1,2 @@
-from .analyze import Analyze
+from .parserwrapper import ParserWrapper
 from .database import Database
