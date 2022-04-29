@@ -13,7 +13,7 @@ class Database:
     """
 
     def __init__(self, uri: str):
-        client = MongoClient(uri, tls=True, tlsAllowInvalidCertificates=True)
+        client = MongoClient(uri)
         database = client['documentsAnalysis']
         self.documents = database['requirementsSpecifications']
         self.templates = database['sectionTreeTemplates']
@@ -143,8 +143,7 @@ class Database:
     @staticmethod
     def __get_entities(entity) -> Dict[str, List[DocumentShort]]:
         entities: List[DocumentShort] = []
-        # TODO: что означает {'name': 1}
-        for value in entity.find({}, {'name': 1}):
+        for value in entity.find({}):
             entities.append(DocumentShort(
                 id=str(value.get('_id')),
                 name=value.get('name')
