@@ -1,15 +1,7 @@
 from fastapi import APIRouter, File, UploadFile, HTTPException
 from typing import Optional, Dict
-from app.schemas.schema import StructureDocument, StructureCreateDocument, Document
+from app.schemas.schema import StructureDocument, StructureCreateDocument, Document, KeywordExtractionMode
 from app import db, parser
-from enum import Enum
-
-
-class KeywordExtractionMode(str, Enum):
-    pullenti = 'pullenti'
-    tf_idf = 'tf_idf'
-    combine = 'combine'
-
 
 router = APIRouter()
 

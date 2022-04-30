@@ -13,7 +13,7 @@ class Database:
     """
 
     def __init__(self, uri: str):
-        client = MongoClient(uri)
+        client = MongoClient(uri, tls=True, tlsAllowInvalidCertificates=True)
         database = client['documentsAnalysis']
         self.documents = database['requirementsSpecifications']
         self.templates = database['sectionTreeTemplates']
@@ -38,6 +38,7 @@ class Database:
             result.append(Document(
                 id=str(document.get('_id')),
                 name=document.get('name'),
+                tempId=document.get('temId'),
                 structure=[document.get('structure')]
             ))
         return {'data': result}
@@ -56,6 +57,7 @@ class Database:
             return Document(
                 id=str(document.get('_id')),
                 name=document.get('name'),
+                tempId=document.get('temId'),
                 structure=[document.get('structure')]
             )
         return None
@@ -91,7 +93,7 @@ class Database:
         if not is_structure_valid:
             return False
 
-        self.documents.insert_one({'name': data.name, 'structure': data.structure[0]})
+        self.documents.insert_one({'name': data.name, 'tempId': data.tempId, 'structure': data.structure[0]})
         return True
 
     def get_templates(self) -> Dict[str, List[DocumentShort]]:
