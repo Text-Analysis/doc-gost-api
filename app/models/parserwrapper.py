@@ -25,13 +25,14 @@ class ParserWrapper:
         """
         contents = await file.read()
         self.save_file(file.filename, contents)
-
-        parser = Parser(template)
-        document_structure = parser.parse_docx(f'./app/{file.filename}')
-
-        os.remove(f'./app/{file.filename}')
-
-        return document_structure
+        try:
+            parser = Parser(template)
+            document_structure = parser.parse_docx(f'./app/{file.filename}')
+            os.remove(f'./app/{file.filename}')
+            return document_structure
+        except Exception:
+            os.remove(f'./app/{file.filename}')
+            raise Exception
 
     def extract_tf_idf_pairs(self, documents: List[dict], document_name: str,
                              section_name: Optional[str] = None) -> List[List[Tuple[str, numpy.float64]]]:

@@ -1,13 +1,14 @@
-from fastapi import APIRouter, File, UploadFile, HTTPException
+from fastapi import APIRouter, File, UploadFile, HTTPException, Form
 from typing import Optional, Dict
-from app.schemas.schema import StructureDocument, StructureCreateDocument, Document, KeywordExtractionMode
+from app.schemas.schema import StructureDocument, DocumentCreateStructure, \
+    Document, KeywordExtractionMode, TemplateCreateStructure
 from app import db, parser
 
 router = APIRouter()
 
 
 @router.post('/api/documents', tags=['documents'])
-def create_document(data: StructureCreateDocument):
+def create_document(data: DocumentCreateStructure):
     created = db.create_document(data)
     if not created:
         raise HTTPException(status_code=422, detail='input data is not valid')
@@ -65,7 +66,7 @@ def get_document_keywords(document_id: str, mode: KeywordExtractionMode, section
 
 
 @router.post('/api/templates', tags=['templates'])
-def create_template(data: StructureCreateDocument):
+def create_template(data: TemplateCreateStructure):
     created = db.create_template(data)
     if not created:
         raise HTTPException(status_code=422, detail='input data is not valid')
@@ -74,7 +75,7 @@ def create_template(data: StructureCreateDocument):
 
 @router.get('/api/templates', tags=['templates'])
 def get_templates():
-    return db.get_templates()
+    return db.get_templates_short()
 
 
 @router.get('/api/templates/{template_id}', tags=['templates'])
@@ -86,8 +87,14 @@ def get_template(template_id: str):
 
 
 @router.post('/api/files')
-async def parse_file(file: UploadFile = File(...)):
-    return await db.parse_docx_by_template(file)
+async def parse_file(file: UploadFile = File(...), template_id: str = Form(...)):
+    template = db.get_template(template_id)
+    if not template:
+        raise HTTPException(status_code=404, detail=f'template with _id={template_id} not found')
+    try:
+        return await db.parse_docx_by_template(template, file)
+    except Exception:
+        raise HTTPException(status_code=422, detail='file is not valid')
 
 
 @router.get('/api/sections/{document_id}')

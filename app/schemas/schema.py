@@ -3,15 +3,17 @@ from typing import List, Optional
 from enum import Enum
 
 
-class DocumentShort(BaseModel):
+class Entity(BaseModel):
     id: str
     name: str
 
 
-class Document(BaseModel):
-    id: str
-    name: str
-    tempId: Optional[str] = None
+class Document(Entity):
+    template_id: Optional[str] = None
+    structure: List
+
+
+class Template(Entity):
     structure: List
 
 
@@ -19,9 +21,14 @@ class StructureDocument(BaseModel):
     structure: List
 
 
-class StructureCreateDocument(BaseModel):
+class DocumentCreateStructure(BaseModel):
     name: str
-    tempId: Optional[str] = None
+    template_id: str
+    structure: List
+
+
+class TemplateCreateStructure(BaseModel):
+    name: str
     structure: List
 
 
