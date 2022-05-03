@@ -9,6 +9,7 @@ router = APIRouter()
 
 @router.post('/api/documents', tags=['documents'])
 def create_document(data: DocumentCreateStructure):
+    print('test', data)
     created = db.create_document(data)
     if not created:
         raise HTTPException(status_code=422, detail='input data is not valid')

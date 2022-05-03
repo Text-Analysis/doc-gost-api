@@ -39,7 +39,7 @@ class Database:
             documents.append(Document(
                 id=str(document.get('_id')),
                 name=document.get('name'),
-                tempId=document.get('temId'),
+                templateId=document.get('templateId'),
                 structure=[document.get('structure')]
             ))
         return {'data': documents}
@@ -58,7 +58,7 @@ class Database:
             return Document(
                 id=str(document.get('_id')),
                 name=document.get('name'),
-                tempId=document.get('temId'),
+                templateId=document.get('templateId'),
                 structure=[document.get('structure')]
             )
         return None
@@ -91,7 +91,7 @@ class Database:
         :return: returns True if the document was created successfully. Otherwise returns False..
         """
         try:
-            template_id = ObjectId(data.template_id)
+            template_id = ObjectId(data.templateId)
         except bson.errors.InvalidId:
             return False
 
@@ -103,7 +103,7 @@ class Database:
         if not is_structure_valid:
             return False
 
-        self.documents.insert_one({'name': data.name, 'tempId': data.template_id, 'structure': data.structure[0]})
+        self.documents.insert_one({'name': data.name, 'templateId': data.templateId, 'structure': data.structure[0]})
         return True
 
     def get_templates_short(self) -> Dict[str, List[Entity]]:

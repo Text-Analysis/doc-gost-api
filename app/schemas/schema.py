@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import List
 from enum import Enum
 
 
@@ -9,7 +9,7 @@ class Entity(BaseModel):
 
 
 class Document(Entity):
-    template_id: Optional[str] = None
+    templateId: str
     structure: List
 
 
@@ -23,7 +23,7 @@ class StructureDocument(BaseModel):
 
 class DocumentCreateStructure(BaseModel):
     name: str
-    template_id: str
+    templateId: str
     structure: List
 
 
