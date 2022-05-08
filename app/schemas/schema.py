@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import List
+from typing import List, Dict
 from enum import Enum
 
 
@@ -29,7 +29,7 @@ class DocumentCreateStructure(BaseModel):
 
 class TemplateCreateStructure(BaseModel):
     name: str
-    structure: List
+    structure: Dict
 
 
 class KeywordExtractionMode(str, Enum):

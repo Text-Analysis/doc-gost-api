@@ -106,6 +106,15 @@ class Database:
         self.documents.insert_one({'name': data.name, 'templateId': data.templateId, 'structure': data.structure[0]})
         return True
 
+    def delete_document(self, document_id: str) -> Union[str, None]:
+        try:
+            object_id = ObjectId(document_id)
+        except bson.errors.InvalidId:
+            return None
+
+        self.documents.delete_one({'_id':  object_id})
+        return 'OK'
+
     def get_templates_short(self) -> Dict[str, List[Entity]]:
         """
         Returns all structures templates for recognizing text documents.
@@ -130,6 +139,15 @@ class Database:
             )
         return None
 
+    def delete_template(self, template_id: str) -> Union[str, None]:
+        try:
+            object_id = ObjectId(template_id)
+        except bson.errors.InvalidId:
+            return None
+
+        self.templates.delete_one({'_id':  object_id})
+        return 'OK'
+
     def create_template(self, data: TemplateCreateStructure) -> bool:
         """
         Adds information about the new structure template to the collection with templates.
@@ -137,11 +155,11 @@ class Database:
         :param data: class containing information about the structure template (name and structure).
         :return: returns True if the structure template was created successfully. Otherwise returns False.
         """
-        is_structure_valid = self.parser.is_valid(data.structure[0])
+        is_structure_valid = self.parser.is_valid(data.structure)
         if not is_structure_valid:
             return False
 
-        self.templates.insert_one({'name': data.name, 'structure': data.structure[0]})
+        self.templates.insert_one({'name': data.name, 'structure': data.structure})
         return True
 
     async def parse_docx_by_template(self, template: Template, file: UploadFile = File(...)) -> list:

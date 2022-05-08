@@ -39,15 +39,24 @@ def update_document(document_id: str, document_structure: StructureDocument):
     return db.update_document(document_id, document_structure)
 
 
+@router.delete('/api/documents/{document_id}', tags=['documents'])
+def delete_document(document_id):
+    document = db.get_document(document_id)
+    if not document:
+        raise HTTPException(status_code=404, detail=f'document with _id={document_id} not found')
+    return db.delete_document(document_id)
+
+
 @router.get('/api/documents/{document_id}/keywords', tags=['documents'])
 def get_document_keywords(document_id: str, mode: KeywordExtractionMode, section_name: Optional[str] = None):
     documents = db.get_mongo_documents()
 
-    document = Document(id='', name='', structure=[])
+    document = Document(id='', name='', templateId='', structure=[])
     for d in documents:
         if str(d.get('_id')) == document_id:
             document.id = str(d.get('_id'))
             document.name = d.get('name')
+            document.templateId = d.get('templateId')
             document.structure = [d.get('section_tree')]
             break
 
@@ -85,6 +94,14 @@ def get_template(template_id: str):
     if not template:
         raise HTTPException(status_code=404, detail=f'template with _id={template_id} not found')
     return template
+
+
+@router.delete('/api/templates/{template_id}', tags=['templates'])
+def delete_template(template_id: str):
+    template = db.get_template(template_id)
+    if not template:
+        raise HTTPException(status_code=404, detail=f'template with _id={template_id} not found')
+    return db.delete_template(template_id)
 
 
 @router.post('/api/files')
