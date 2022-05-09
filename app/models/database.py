@@ -91,6 +91,17 @@ class Database:
         self.documents.update_one(document, new_keywords)
         return 'OK'
 
+    def get_document_keywords(self, document_id: str) -> Union[List, None]:
+        try:
+            document_id = ObjectId(document_id)
+        except bson.errors.InvalidId:
+            return None
+
+        document = self.documents.find_one({'_id': ObjectId(document_id)})
+        if document:
+            return document.get("keywords")
+        return None
+
     def create_document(self, data: DocumentCreateStructure) -> bool:
         """
         Adds information about the new document to the resulting collection.

@@ -53,7 +53,16 @@ def delete_document(document_id):
 
 
 @router.get('/api/documents/{document_id}/keywords', tags=['documents'])
-def get_document_keywords(document_id: str, mode: KeywordExtractionMode, section_name: Optional[str] = None):
+def get_document_keywords(document_id):
+    document = db.get_document(document_id)
+    if not document:
+        raise HTTPException(status_code=404, detail=f'document with _id={document_id} not found')
+
+    return db.get_document_keywords(document_id)
+
+
+@router.get('/api/documents/{document_id}/keywords/generation', tags=['documents'])
+def generation_document_keywords(document_id: str, mode: KeywordExtractionMode, section_name: Optional[str] = None):
     documents = db.get_mongo_documents()
     document = Document(id='', name='', templateId='', structure=[])
     for d in documents:
@@ -72,6 +81,15 @@ def get_document_keywords(document_id: str, mode: KeywordExtractionMode, section
     if mode == KeywordExtractionMode.combine:
         return parser.extract_rationized_keywords(documents, document.name, section_name)
     raise HTTPException(status_code=404, detail=f'keyword extraction mode {mode} not found')
+
+
+@router.get('/api/documents/{document_id}/sections', tags=['documents'])
+def get_sections(document_id: str):
+    document = db.get_document(document_id)
+    if not document:
+        raise HTTPException(status_code=404, detail=f'document with _id={document_id} not found')
+    document_structure: Dict = document.structure[0]
+    return parser.get_section_names(document_structure)
 
 
 @router.post('/api/templates', tags=['templates'])
@@ -112,12 +130,3 @@ async def parse_file(file: UploadFile = File(...), template_id: str = Form(...))
         return await db.parse_docx_by_template(template, file)
     except Exception:
         raise HTTPException(status_code=422, detail='file is not valid')
-
-
-@router.get('/api/sections/{document_id}')
-def get_sections(document_id: str):
-    document = db.get_document(document_id)
-    if not document:
-        raise HTTPException(status_code=404, detail=f'document with _id={document_id} not found')
-    document_structure: Dict = document.structure[0]
-    return parser.get_section_names(document_structure)
