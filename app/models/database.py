@@ -1,8 +1,8 @@
 import bson.errors
 from pymongo import MongoClient
 from typing import List, Dict, Union
-from app.schemas.schema import Entity, Document, \
-    StructureDocument, DocumentCreateStructure, TemplateCreateStructure, Template
+from app.schemas.schema import Entity, Document,\
+    DocumentCreateStructure, TemplateCreateStructure, Template
 from bson.objectid import ObjectId
 from fastapi import File, UploadFile
 from app.models.parserwrapper import ParserWrapper
@@ -40,7 +40,8 @@ class Database:
                 id=str(document.get('_id')),
                 name=document.get('name'),
                 templateId=document.get('templateId'),
-                structure=[document.get('structure')]
+                structure=[document.get('structure')],
+                keywords=[document.get('keywords')]
             ))
         return {'data': documents}
 
@@ -59,7 +60,8 @@ class Database:
                 id=str(document.get('_id')),
                 name=document.get('name'),
                 templateId=document.get('templateId'),
-                structure=[document.get('structure')]
+                structure=[document.get('structure')],
+                keywords=[document.get('keywords')]
             )
         return None
 
@@ -69,18 +71,24 @@ class Database:
         """
         return list(self.documents.find({}))
 
-    def update_document(self, document_id: str, new_document_structure: StructureDocument) -> str:
+    def update_document_structure(self, document_id: str, structure: List) -> str:
         """
         Updates information about a document that exists in the resulting collection.
 
         :param document_id: string representation of the document object id.
-        :param new_document_structure: edited section structure.
+        :param structure: edited section structure.
         :return: status.
         """
         # we do not check the id for valid, since we first call the receiving method, which has a check
         document = {'_id': ObjectId(document_id)}
-        new_data = {'$set': {'structure': new_document_structure.structure[0]}}
+        new_data = {'$set': {'structure': structure[0]}}
         self.documents.update_one(document, new_data)
+        return 'OK'
+
+    def update_document_keywords(self, document_id: str, keywords: List):
+        document = {'_id': ObjectId(document_id)}
+        new_keywords = {'$set': {'keywords': keywords}}
+        self.documents.update_one(document, new_keywords)
         return 'OK'
 
     def create_document(self, data: DocumentCreateStructure) -> bool:
@@ -88,7 +96,7 @@ class Database:
         Adds information about the new document to the resulting collection.
 
         :param data: class containing information about the document (name and structure).
-        :return: returns True if the document was created successfully. Otherwise returns False..
+        :return: returns True if the document was created successfully. Otherwise returns False.
         """
         try:
             template_id = ObjectId(data.templateId)
@@ -103,7 +111,8 @@ class Database:
         if not is_structure_valid:
             return False
 
-        self.documents.insert_one({'name': data.name, 'templateId': data.templateId, 'structure': data.structure[0]})
+        self.documents.insert_one({'name': data.name, 'templateId': data.templateId,
+                                   'structure': data.structure[0], 'keywords': []})
         return True
 
     def delete_document(self, document_id: str) -> Union[str, None]:

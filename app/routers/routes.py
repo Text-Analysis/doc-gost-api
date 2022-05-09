@@ -1,7 +1,7 @@
 from fastapi import APIRouter, File, UploadFile, HTTPException, Form
 from typing import Optional, Dict
-from app.schemas.schema import StructureDocument, DocumentCreateStructure, \
-    Document, KeywordExtractionMode, TemplateCreateStructure
+from app.schemas.schema import DocumentCreateStructure, \
+    Document, KeywordExtractionMode, TemplateCreateStructure, DocumentUpdate
 from app import db, parser
 
 router = APIRouter()
@@ -31,12 +31,17 @@ def get_document(document_id: str):
     return document
 
 
-@router.put('/api/documents/{document_id}', tags=['documents'])
-def update_document(document_id: str, document_structure: StructureDocument):
+@router.patch('/api/documents/{document_id}', tags=['documents'])
+def update_document(document_id: str, model: DocumentUpdate):
     document = db.get_document(document_id)
     if not document:
         raise HTTPException(status_code=404, detail=f'document with _id={document_id} not found')
-    return db.update_document(document_id, document_structure)
+    update_data = model.dict(exclude_unset=True)
+    if "structure" in update_data:
+        return db.update_document_structure(document_id, update_data["structure"])
+    if "keywords" in update_data:
+        return db.update_document_keywords(document_id, update_data["keywords"])
+    raise HTTPException(status_code=422, detail=f'data is null')
 
 
 @router.delete('/api/documents/{document_id}', tags=['documents'])
@@ -50,7 +55,6 @@ def delete_document(document_id):
 @router.get('/api/documents/{document_id}/keywords', tags=['documents'])
 def get_document_keywords(document_id: str, mode: KeywordExtractionMode, section_name: Optional[str] = None):
     documents = db.get_mongo_documents()
-
     document = Document(id='', name='', templateId='', structure=[])
     for d in documents:
         if str(d.get('_id')) == document_id:
@@ -59,19 +63,14 @@ def get_document_keywords(document_id: str, mode: KeywordExtractionMode, section
             document.templateId = d.get('templateId')
             document.structure = [d.get('section_tree')]
             break
-
     if not document.id:
         raise HTTPException(status_code=404, detail=f'document with _id={document_id} not found')
-
     if mode == KeywordExtractionMode.tf_idf:
         return parser.extract_tf_idf_pairs(documents, document.name, section_name)
-
     if mode == KeywordExtractionMode.pullenti:
         return parser.extract_keywords(documents, document.name, section_name)
-
     if mode == KeywordExtractionMode.combine:
         return parser.extract_rationized_keywords(documents, document.name, section_name)
-
     raise HTTPException(status_code=404, detail=f'keyword extraction mode {mode} not found')
 
 
@@ -120,6 +119,5 @@ def get_sections(document_id: str):
     document = db.get_document(document_id)
     if not document:
         raise HTTPException(status_code=404, detail=f'document with _id={document_id} not found')
-
     document_structure: Dict = document.structure[0]
     return parser.get_section_names(document_structure)

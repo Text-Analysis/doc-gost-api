@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import List, Dict
+from typing import List, Dict, Optional
 from enum import Enum
 
 
@@ -11,14 +11,16 @@ class Entity(BaseModel):
 class Document(Entity):
     templateId: str
     structure: List
+    keywords: Optional[List] = None
 
 
 class Template(Entity):
     structure: List
 
 
-class StructureDocument(BaseModel):
-    structure: List
+class DocumentUpdate(BaseModel):
+    structure: Optional[List] = None
+    keywords: Optional[List] = None
 
 
 class DocumentCreateStructure(BaseModel):
