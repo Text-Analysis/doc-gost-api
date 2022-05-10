@@ -1,4 +1,5 @@
 from fastapi import APIRouter, File, UploadFile, HTTPException, Form
+from fastapi.responses import FileResponse
 from typing import Optional, Dict
 from app.schemas.schema import DocumentCreateStructure, \
     Document, KeywordExtractionMode, TemplateCreateStructure, DocumentUpdate
@@ -81,6 +82,18 @@ def generation_document_keywords(document_id: str, mode: KeywordExtractionMode, 
     if mode == KeywordExtractionMode.combine:
         return parser.extract_rationized_keywords(documents, document.name, section_name)
     raise HTTPException(status_code=404, detail=f'keyword extraction mode {mode} not found')
+
+
+@router.get('/api/documents/{document_id}/download', tags=['documents'])
+def download_document(document_id: str):
+    document = db.get_document(document_id)
+    if not document:
+        raise HTTPException(status_code=404, detail=f'document with _id={document_id} not found')
+    try:
+        file_path = parser.save_document_as_docx(document.name, document.structure[0])
+        return FileResponse(path=file_path, filename=file_path)
+    except Exception as ex:
+        raise HTTPException(status_code=500, detail=f'download error: {ex}')
 
 
 @router.get('/api/documents/{document_id}/sections', tags=['documents'])
