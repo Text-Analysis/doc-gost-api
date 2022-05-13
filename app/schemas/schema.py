@@ -1,22 +1,40 @@
 from pydantic import BaseModel
-from typing import List
+from typing import List, Dict, Optional
+from enum import Enum
 
 
-class DocumentShort(BaseModel):
+class Entity(BaseModel):
     id: str
     name: str
 
 
-class Document(BaseModel):
-    id: str
+class Document(Entity):
+    templateId: str
+    structure: List
+    keywords: Optional[List] = None
+
+
+class Template(Entity):
+    structure: List
+
+
+class DocumentUpdate(BaseModel):
+    structure: Optional[List] = None
+    keywords: Optional[List] = None
+
+
+class DocumentCreateStructure(BaseModel):
     name: str
+    templateId: str
     structure: List
 
 
-class StructureDocument(BaseModel):
-    structure: List
-
-
-class StructureCreateDocument(BaseModel):
+class TemplateCreateStructure(BaseModel):
     name: str
-    structure: List
+    structure: Dict
+
+
+class KeywordExtractionMode(str, Enum):
+    pullenti = 'pullenti'
+    tf_idf = 'tf_idf'
+    combine = 'combine'

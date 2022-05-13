@@ -1,7 +1,7 @@
 import os
 from fastapi import File, UploadFile
 from srsparser import Parser, LanguageProcessor, SectionsTree
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Dict
 import numpy
 
 
@@ -25,13 +25,22 @@ class ParserWrapper:
         """
         contents = await file.read()
         self.save_file(file.filename, contents)
+        try:
+            parser = Parser(template)
+            document_structure = parser.parse_docx(f'./app/{file.filename}')
+            os.remove(f'./app/{file.filename}')
+            return document_structure
+        except Exception as ex:
+            os.remove(f'./app/{file.filename}')
+            raise ex
 
-        parser = Parser(template)
-        document_structure = parser.parse_docx(f'./app/{file.filename}')
-
-        os.remove(f'./app/{file.filename}')
-
-        return document_structure
+    @staticmethod
+    def save_document_as_docx(name: str, structure: Dict) -> str:
+        try:
+            Parser.save_as_docx(structure, name)
+            return f'./{name}.docx'
+        except Exception as ex:
+            raise ex
 
     def extract_tf_idf_pairs(self, documents: List[dict], document_name: str,
                              section_name: Optional[str] = None) -> List[List[Tuple[str, numpy.float64]]]:
