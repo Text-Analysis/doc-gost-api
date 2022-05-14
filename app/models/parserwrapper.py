@@ -1,4 +1,6 @@
 import os
+from threading import Timer
+
 from fastapi import File, UploadFile
 from srsparser import Parser, LanguageProcessor, SectionsTree
 from typing import List, Optional, Tuple, Dict
@@ -114,3 +116,11 @@ class ParserWrapper:
             return section_tree.validate()
         except AssertionError:
             return False
+
+    def clean_document(self, file_path: str):
+        timer = Timer(60, self.__clean_document, [file_path])
+        timer.start()
+
+    @staticmethod
+    def __clean_document(file_path: str):
+        os.remove(file_path)

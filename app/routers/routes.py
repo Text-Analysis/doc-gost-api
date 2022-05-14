@@ -91,6 +91,7 @@ def download_document(document_id: str):
         raise HTTPException(status_code=404, detail=f'document with _id={document_id} not found')
     try:
         file_path = parser.save_document_as_docx(document.name, document.structure[0])
+        parser.clean_document(file_path)
         return FileResponse(path=file_path, filename=file_path)
     except Exception as ex:
         raise HTTPException(status_code=500, detail=f'download error: {ex}')
