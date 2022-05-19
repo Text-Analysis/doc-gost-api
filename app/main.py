@@ -11,6 +11,10 @@ tags_metadata = [
         "name": "templates",
         "description": "Operations with templates",
     },
+    {
+        "name": "other",
+        "description": "Other operations"
+    }
 ]
 
 app = FastAPI(openapi_tags=tags_metadata)

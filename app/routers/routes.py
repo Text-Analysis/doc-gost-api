@@ -46,7 +46,7 @@ def update_document(document_id: str, model: DocumentUpdate):
 
 
 @router.delete('/api/documents/{document_id}', tags=['documents'])
-def delete_document(document_id):
+def delete_document(document_id: str):
     document = db.get_document(document_id)
     if not document:
         raise HTTPException(status_code=404, detail=f'document with _id={document_id} not found')
@@ -54,7 +54,7 @@ def delete_document(document_id):
 
 
 @router.get('/api/documents/{document_id}/keywords', tags=['documents'])
-def get_document_keywords(document_id):
+def get_document_keywords(document_id: str):
     document = db.get_document(document_id)
     if not document:
         raise HTTPException(status_code=404, detail=f'document with _id={document_id} not found')
@@ -135,7 +135,7 @@ def delete_template(template_id: str):
     return db.delete_template(template_id)
 
 
-@router.post('/api/files')
+@router.post('/api/files', tags=['other'])
 async def parse_file(file: UploadFile = File(...), template_id: str = Form(...)):
     template = db.get_template(template_id)
     if not template:
@@ -146,8 +146,10 @@ async def parse_file(file: UploadFile = File(...), template_id: str = Form(...))
         raise HTTPException(status_code=422, detail='file is not valid')
 
 
-@router.put('/api/db')
+@router.put('/api/db', tags=['other'])
 def change_connect_database(uri: str, dev_mode: bool = False):
-    # реализовать валидацию uri
-    db.change_connect_database(uri, dev_mode)
-    return 'OK'
+    try:
+        db.change_connect_database(uri, dev_mode)
+        return 'OK'
+    except Exception:
+        raise HTTPException(status_code=500, detail='error connecting to database')

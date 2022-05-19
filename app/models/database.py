@@ -19,6 +19,12 @@ class Database:
 
     @staticmethod
     def __connect_database(uri, dev_mode: bool = False) -> tuple:
+        """
+        Returns a tuple that contains collections with documents and templates
+
+        :param uri: URI to connect to the database
+        :param dev_mode: parameter turns on a develop mode
+        """
         print('test', uri)
         if dev_mode:
             client = MongoClient(uri, tls=True, tlsAllowInvalidCertificates=True)
@@ -30,6 +36,12 @@ class Database:
         return documents, templates
 
     def change_connect_database(self, uri, dev_mode: bool = False):
+        """
+        Change connection of database
+
+        :param uri: URI to connect to the database
+        :param dev_mode: parameter turns on a develop mode
+        """
         self.documents, self.templates = self.__connect_database(uri, dev_mode)
 
     def get_documents_short(self) -> Dict[str, List[Entity]]:
