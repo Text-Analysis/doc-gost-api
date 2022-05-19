@@ -6,6 +6,6 @@ load_dotenv()
 
 mongodb_connstring = os.environ['MONGODB_CONNSTRING']
 
-db = Database(mongodb_connstring)
+db = Database(mongodb_connstring, False)
 
 parser = ParserWrapper()

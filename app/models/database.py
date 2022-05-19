@@ -13,12 +13,24 @@ class Database:
     A class for working with MongoDB database collections.
     """
 
-    def __init__(self, uri: str):
-        client = MongoClient(uri, tls=True, tlsAllowInvalidCertificates=True)
-        database = client['documentsAnalysis']
-        self.documents = database['requirementsSpecifications']
-        self.templates = database['sectionTreeTemplates']
+    def __init__(self, uri: str, dev_mode: bool = False):
+        self.documents, self.templates = self.__connect_database(uri, dev_mode)
         self.parser = ParserWrapper()
+
+    @staticmethod
+    def __connect_database(uri, dev_mode: bool = False) -> tuple:
+        print('test', uri)
+        if dev_mode:
+            client = MongoClient(uri, tls=True, tlsAllowInvalidCertificates=True)
+        else:
+            client = MongoClient(uri)
+        database = client['documentsAnalysis']
+        documents = database['requirementsSpecifications']
+        templates = database['sectionTreeTemplates']
+        return documents, templates
+
+    def change_connect_database(self, uri, dev_mode: bool = False):
+        self.documents, self.templates = self.__connect_database(uri, dev_mode)
 
     def get_documents_short(self) -> Dict[str, List[Entity]]:
         """

@@ -144,3 +144,10 @@ async def parse_file(file: UploadFile = File(...), template_id: str = Form(...))
         return await db.parse_docx_by_template(template, file)
     except Exception:
         raise HTTPException(status_code=422, detail='file is not valid')
+
+
+@router.put('/api/db')
+def change_connect_database(uri: str, dev_mode: bool = False):
+    # реализовать валидацию uri
+    db.change_connect_database(uri, dev_mode)
+    return 'OK'
