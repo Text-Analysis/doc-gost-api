@@ -14,7 +14,7 @@ class Database:
     """
 
     def __init__(self, uri: str):
-        client = MongoClient(uri, tls=True, tlsAllowInvalidCertificates=True)
+        client = MongoClient(uri)
         database = client['documentsAnalysis']
         self.documents = database['requirementsSpecifications']
         self.templates = database['sectionTreeTemplates']
