@@ -25,7 +25,6 @@ class Database:
         :param uri: URI to connect to the database
         :param dev_mode: parameter turns on a develop mode
         """
-        print('test', uri)
         if dev_mode:
             client = MongoClient(uri, tls=True, tlsAllowInvalidCertificates=True)
         else:
