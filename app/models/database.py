@@ -1,5 +1,5 @@
 import bson.errors
-from pymongo import MongoClient
+from pymongo import MongoClient, uri_parser, errors
 from typing import List, Dict, Union
 from app.schemas.schema import Entity, Document,\
     DocumentCreateStructure, TemplateCreateStructure, Template
@@ -18,13 +18,18 @@ class Database:
         self.parser = ParserWrapper()
 
     @staticmethod
-    def __connect_database(uri, dev_mode: bool = False) -> tuple:
+    def __connect_database(uri, dev_mode: bool = False) -> Union[tuple, errors.InvalidURI]:
         """
         Returns a tuple that contains collections with documents and templates
 
         :param uri: URI to connect to the database
         :param dev_mode: parameter turns on a develop mode
         """
+        try:
+            uri_parser.parse_uri(uri)
+        except errors.InvalidURI as ex:
+            raise ex
+
         if dev_mode:
             client = MongoClient(uri, tls=True, tlsAllowInvalidCertificates=True)
         else:
@@ -188,8 +193,17 @@ class Database:
         except bson.errors.InvalidId:
             return None
 
-        self.templates.delete_one({'_id':  object_id})
-        return 'OK'
+        flag = False
+        for document in self.documents.find({}):
+            current_temp_id = document.get('templateId')
+            if current_temp_id == template_id:
+                flag = True
+
+        if flag is False:
+            self.templates.delete_one({'_id':  object_id})
+            return 'OK'
+        else:
+            return None
 
     def create_template(self, data: TemplateCreateStructure) -> bool:
         """

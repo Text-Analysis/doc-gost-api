@@ -4,6 +4,7 @@ from typing import Optional, Dict
 from app.schemas.schema import DocumentCreateStructure, \
     Document, KeywordExtractionMode, TemplateCreateStructure, DocumentUpdate
 from app import db, parser
+from pymongo import errors
 
 router = APIRouter()
 
@@ -151,5 +152,7 @@ def change_connect_database(uri: str, dev_mode: bool = False):
     try:
         db.change_connect_database(uri, dev_mode)
         return 'OK'
+    except errors.InvalidURI:
+        raise HTTPException(status_code=422, detail=f'URI validation error')
     except Exception:
         raise HTTPException(status_code=500, detail='error connecting to database')
