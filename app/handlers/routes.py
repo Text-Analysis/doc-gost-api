@@ -1,4 +1,4 @@
-from fastapi import APIRouter, File, UploadFile, HTTPException, Form
+from fastapi import APIRouter, File, UploadFile, Form
 from fastapi.responses import FileResponse
 from typing import Optional, Dict
 from app.schemas.schema import DocumentCreateStructure, \
