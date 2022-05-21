@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.routers import routes
+from app.handlers import routes
 
 tags_metadata = [
     {

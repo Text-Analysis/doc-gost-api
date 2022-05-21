@@ -4,17 +4,17 @@ from typing import Optional, Dict
 from app.schemas.schema import DocumentCreateStructure, \
     Document, KeywordExtractionMode, TemplateCreateStructure, DocumentUpdate
 from app import db, parser
-from pymongo import errors
+from .error import RouteErrorHandle
+from app.errors import ValidException, FoundException
 
-router = APIRouter()
+router = APIRouter(route_class=RouteErrorHandle)
 
 
 @router.post('/api/documents', tags=['documents'])
 def create_document(data: DocumentCreateStructure):
-    print('test', data)
     created = db.create_document(data)
     if not created:
-        raise HTTPException(status_code=422, detail='input data is not valid')
+        raise ValidException('input data is not valid')
     return 'OK'
 
 
@@ -29,7 +29,7 @@ def get_documents(short: bool = True):
 def get_document(document_id: str):
     document = db.get_document(document_id)
     if not document:
-        raise HTTPException(status_code=404, detail=f'document with _id={document_id} not found')
+        raise FoundException(f'document with _id={document_id} not found')
     return document
 
 
@@ -37,20 +37,20 @@ def get_document(document_id: str):
 def update_document(document_id: str, model: DocumentUpdate):
     document = db.get_document(document_id)
     if not document:
-        raise HTTPException(status_code=404, detail=f'document with _id={document_id} not found')
+        raise FoundException(f'document with _id={document_id} not found')
     update_data = model.dict(exclude_unset=True)
     if "structure" in update_data:
         return db.update_document_structure(document_id, update_data["structure"])
     if "keywords" in update_data:
         return db.update_document_keywords(document_id, update_data["keywords"])
-    raise HTTPException(status_code=422, detail=f'data is null')
+    raise ValidException('data is null')
 
 
 @router.delete('/api/documents/{document_id}', tags=['documents'])
 def delete_document(document_id: str):
     document = db.get_document(document_id)
     if not document:
-        raise HTTPException(status_code=404, detail=f'document with _id={document_id} not found')
+        raise FoundException(f'document with _id={document_id} not found')
     return db.delete_document(document_id)
 
 
@@ -58,8 +58,7 @@ def delete_document(document_id: str):
 def get_document_keywords(document_id: str):
     document = db.get_document(document_id)
     if not document:
-        raise HTTPException(status_code=404, detail=f'document with _id={document_id} not found')
-
+        raise FoundException(f'document with _id={document_id} not found')
     return db.get_document_keywords(document_id)
 
 
@@ -75,34 +74,34 @@ def generation_document_keywords(document_id: str, mode: KeywordExtractionMode, 
             document.structure = [d.get('section_tree')]
             break
     if not document.id:
-        raise HTTPException(status_code=404, detail=f'document with _id={document_id} not found')
+        raise FoundException(f'document with _id={document_id} not found')
     if mode == KeywordExtractionMode.tf_idf:
         return parser.extract_tf_idf_pairs(documents, document.name, section_name)
     if mode == KeywordExtractionMode.pullenti:
         return parser.extract_keywords(documents, document.name, section_name)
     if mode == KeywordExtractionMode.combine:
         return parser.extract_rationized_keywords(documents, document.name, section_name)
-    raise HTTPException(status_code=404, detail=f'keyword extraction mode {mode} not found')
+    raise ValidException(f'keyword extraction mode {mode} is not valid')
 
 
 @router.get('/api/documents/{document_id}/download', tags=['documents'])
 def download_document(document_id: str):
     document = db.get_document(document_id)
     if not document:
-        raise HTTPException(status_code=404, detail=f'document with _id={document_id} not found')
+        raise FoundException(f'document with _id={document_id} not found')
     try:
         file_path = parser.save_document_as_docx(document.name, document.structure[0])
         parser.clean_document(file_path)
         return FileResponse(path=file_path, filename=file_path)
     except Exception as ex:
-        raise HTTPException(status_code=500, detail=f'download error: {ex}')
+        raise Exception(f'download error: {ex}')
 
 
 @router.get('/api/documents/{document_id}/sections', tags=['documents'])
 def get_sections(document_id: str):
     document = db.get_document(document_id)
     if not document:
-        raise HTTPException(status_code=404, detail=f'document with _id={document_id} not found')
+        raise FoundException(f'document with _id={document_id} not found')
     document_structure: Dict = document.structure[0]
     return parser.get_section_names(document_structure)
 
@@ -111,7 +110,7 @@ def get_sections(document_id: str):
 def create_template(data: TemplateCreateStructure):
     created = db.create_template(data)
     if not created:
-        raise HTTPException(status_code=422, detail='input data is not valid')
+        raise ValidException('input data is not valid')
     return 'OK'
 
 
@@ -124,7 +123,7 @@ def get_templates():
 def get_template(template_id: str):
     template = db.get_template(template_id)
     if not template:
-        raise HTTPException(status_code=404, detail=f'template with _id={template_id} not found')
+        raise FoundException(f'template with _id={template_id} not found')
     return template
 
 
@@ -132,7 +131,7 @@ def get_template(template_id: str):
 def delete_template(template_id: str):
     template = db.get_template(template_id)
     if not template:
-        raise HTTPException(status_code=404, detail=f'template with _id={template_id} not found')
+        raise FoundException(f'template with _id={template_id} not found')
     return db.delete_template(template_id)
 
 
@@ -140,11 +139,11 @@ def delete_template(template_id: str):
 async def parse_file(file: UploadFile = File(...), template_id: str = Form(...)):
     template = db.get_template(template_id)
     if not template:
-        raise HTTPException(status_code=404, detail=f'template with _id={template_id} not found')
+        raise FoundException(f'template with _id={template_id} not found')
     try:
         return await db.parse_docx_by_template(template, file)
-    except Exception:
-        raise HTTPException(status_code=422, detail='file is not valid')
+    except ValidException:
+        raise ValidException('file is not valid')
 
 
 @router.put('/api/db', tags=['other'])
@@ -152,7 +151,7 @@ def change_connect_database(uri: str, dev_mode: bool = False):
     try:
         db.change_connect_database(uri, dev_mode)
         return 'OK'
-    except errors.InvalidURI:
-        raise HTTPException(status_code=422, detail=f'URI validation error')
+    except ValidException as ex:
+        raise ValidException(f'URI validation error: {ex}')
     except Exception:
-        raise HTTPException(status_code=500, detail='error connecting to database')
+        raise Exception('error connecting to database')

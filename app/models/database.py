@@ -1,11 +1,15 @@
 import bson.errors
+from bson.objectid import ObjectId
+
 from pymongo import MongoClient, uri_parser, errors
+from fastapi import File, UploadFile
+
 from typing import List, Dict, Union
+
 from app.schemas.schema import Entity, Document,\
     DocumentCreateStructure, TemplateCreateStructure, Template
-from bson.objectid import ObjectId
-from fastapi import File, UploadFile
 from app.models.parserwrapper import ParserWrapper
+from app.errors import ValidException
 
 
 class Database:
@@ -18,7 +22,7 @@ class Database:
         self.parser = ParserWrapper()
 
     @staticmethod
-    def __connect_database(uri, dev_mode: bool = False) -> Union[tuple, errors.InvalidURI]:
+    def __connect_database(uri, dev_mode: bool = False) -> Union[tuple, ValidException]:
         """
         Returns a tuple that contains collections with documents and templates
 
@@ -28,7 +32,7 @@ class Database:
         try:
             uri_parser.parse_uri(uri)
         except errors.InvalidURI as ex:
-            raise ex
+            raise ValidException(str(ex))
 
         if dev_mode:
             client = MongoClient(uri, tls=True, tlsAllowInvalidCertificates=True)
