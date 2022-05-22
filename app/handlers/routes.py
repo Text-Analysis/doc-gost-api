@@ -89,12 +89,9 @@ def download_document(document_id: str):
     document = db.get_document(document_id)
     if not document:
         raise FoundException(f'document with _id={document_id} not found')
-    try:
-        file_path = parser.save_document_as_docx(document.name, document.structure[0])
-        parser.clean_document(file_path)
-        return FileResponse(path=file_path, filename=file_path)
-    except Exception as ex:
-        raise Exception(f'download error: {ex}')
+    file_path = parser.save_document_as_docx(document.name, document.structure[0])
+    parser.clean_document(file_path)
+    return FileResponse(path=file_path, filename=file_path)
 
 
 @router.get('/api/documents/{document_id}/sections', tags=['documents'])
@@ -140,10 +137,7 @@ async def parse_file(file: UploadFile = File(...), template_id: str = Form(...))
     template = db.get_template(template_id)
     if not template:
         raise FoundException(f'template with _id={template_id} not found')
-    try:
-        return await db.parse_docx_by_template(template, file)
-    except ValidException:
-        raise ValidException('file is not valid')
+    return await db.parse_docx_by_template(template, file)
 
 
 @router.put('/api/db', tags=['other'])
@@ -151,7 +145,5 @@ def change_connect_database(uri: str, dev_mode: bool = False):
     try:
         db.change_connect_database(uri, dev_mode)
         return 'OK'
-    except ValidException as ex:
-        raise ValidException(f'URI validation error: {ex}')
     except Exception:
         raise Exception('error connecting to database')

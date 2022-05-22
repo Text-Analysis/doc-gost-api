@@ -191,7 +191,7 @@ class Database:
             )
         return None
 
-    def delete_template(self, template_id: str) -> Union[str, None]:
+    def delete_template(self, template_id: str) -> Union[str, None, ValidException]:
         try:
             object_id = ObjectId(template_id)
         except bson.errors.InvalidId:
@@ -207,7 +207,7 @@ class Database:
             self.templates.delete_one({'_id':  object_id})
             return 'OK'
         else:
-            return None
+            raise ValidException('template fastens to document')
 
     def create_template(self, data: TemplateCreateStructure) -> bool:
         """
