@@ -1,4 +1,6 @@
 import os
+from threading import Timer
+
 from fastapi import File, UploadFile
 from srsparser import Parser, LanguageProcessor, SectionsTree
 from typing import List, Optional, Tuple, Dict
@@ -32,7 +34,7 @@ class ParserWrapper:
             return document_structure
         except Exception as ex:
             os.remove(f'./app/{file.filename}')
-            raise ex
+            raise Exception(str(ex))
 
     @staticmethod
     def save_document_as_docx(name: str, structure: Dict) -> str:
@@ -40,7 +42,7 @@ class ParserWrapper:
             Parser.save_as_docx(structure, name)
             return f'./{name}.docx'
         except Exception as ex:
-            raise ex
+            raise Exception(str(ex))
 
     def extract_tf_idf_pairs(self, documents: List[dict], document_name: str,
                              section_name: Optional[str] = None) -> List[List[Tuple[str, numpy.float64]]]:
@@ -114,3 +116,11 @@ class ParserWrapper:
             return section_tree.validate()
         except AssertionError:
             return False
+
+    def clean_document(self, file_path: str):
+        timer = Timer(60, self.__clean_document, [file_path])
+        timer.start()
+
+    @staticmethod
+    def __clean_document(file_path: str):
+        os.remove(file_path)

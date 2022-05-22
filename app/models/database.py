@@ -1,11 +1,15 @@
 import bson.errors
-from pymongo import MongoClient
+from bson.objectid import ObjectId
+
+from pymongo import MongoClient, uri_parser, errors
+from fastapi import File, UploadFile
+
 from typing import List, Dict, Union
+
 from app.schemas.schema import Entity, Document,\
     DocumentCreateStructure, TemplateCreateStructure, Template
-from bson.objectid import ObjectId
-from fastapi import File, UploadFile
 from app.models.parserwrapper import ParserWrapper
+from app.errors import ValidException
 
 
 class Database:
@@ -13,12 +17,40 @@ class Database:
     A class for working with MongoDB database collections.
     """
 
-    def __init__(self, uri: str):
-        client = MongoClient(uri)
-        database = client['documentsAnalysis']
-        self.documents = database['requirementsSpecifications']
-        self.templates = database['sectionTreeTemplates']
+    def __init__(self, uri: str, dev_mode: bool = False):
+        self.documents, self.templates = self.__connect_database(uri, dev_mode)
         self.parser = ParserWrapper()
+
+    @staticmethod
+    def __connect_database(uri, dev_mode: bool = False) -> Union[tuple, ValidException]:
+        """
+        Returns a tuple that contains collections with documents and templates
+
+        :param uri: URI to connect to the database
+        :param dev_mode: parameter turns on a develop mode
+        """
+        try:
+            uri_parser.parse_uri(uri)
+        except errors.InvalidURI as ex:
+            raise ValidException(str(ex))
+
+        if dev_mode:
+            client = MongoClient(uri, tls=True, tlsAllowInvalidCertificates=True)
+        else:
+            client = MongoClient(uri)
+        database = client['documentsAnalysis']
+        documents = database['requirementsSpecifications']
+        templates = database['sectionTreeTemplates']
+        return documents, templates
+
+    def change_connect_database(self, uri, dev_mode: bool = False):
+        """
+        Change connection of database
+
+        :param uri: URI to connect to the database
+        :param dev_mode: parameter turns on a develop mode
+        """
+        self.documents, self.templates = self.__connect_database(uri, dev_mode)
 
     def get_documents_short(self) -> Dict[str, List[Entity]]:
         """
@@ -159,14 +191,23 @@ class Database:
             )
         return None
 
-    def delete_template(self, template_id: str) -> Union[str, None]:
+    def delete_template(self, template_id: str) -> Union[str, None, ValidException]:
         try:
             object_id = ObjectId(template_id)
         except bson.errors.InvalidId:
             return None
 
-        self.templates.delete_one({'_id':  object_id})
-        return 'OK'
+        flag = False
+        for document in self.documents.find({}):
+            current_temp_id = document.get('templateId')
+            if current_temp_id == template_id:
+                flag = True
+
+        if flag is False:
+            self.templates.delete_one({'_id':  object_id})
+            return 'OK'
+        else:
+            raise ValidException('template fastens to document')
 
     def create_template(self, data: TemplateCreateStructure) -> bool:
         """
