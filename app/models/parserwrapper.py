@@ -1,10 +1,10 @@
 import os
 from threading import Timer
+from typing import List, Optional, Tuple, Dict
 
+import numpy
 from fastapi import File, UploadFile
 from srsparser import Parser, LanguageProcessor, SectionsTree
-from typing import List, Optional, Tuple, Dict
-import numpy
 
 
 class ParserWrapper:

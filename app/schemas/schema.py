@@ -1,6 +1,7 @@
-from pydantic import BaseModel
-from typing import List, Dict, Optional
 from enum import Enum
+from typing import List, Dict, Optional
+
+from pydantic import BaseModel
 
 
 class Entity(BaseModel):

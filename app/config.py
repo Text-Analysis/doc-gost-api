@@ -1,11 +1,14 @@
-from .models import Database, ParserWrapper
-from dotenv import load_dotenv
 import os
+
+from dotenv import load_dotenv
+
+from app.models.database import Database
+from app.models.parserwrapper import ParserWrapper
 
 load_dotenv()
 
-mongodb_connstring = os.environ['MONGODB_CONNSTRING']
+MONGODB_CONNSTRING = os.environ['MONGODB_CONNSTRING']
 
-db = Database(mongodb_connstring)
+db = Database(MONGODB_CONNSTRING)
 
 parser = ParserWrapper()
